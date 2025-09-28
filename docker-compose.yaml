@@ -1,0 +1,29 @@
+services:
+  postgres:
+    image: postgres:latest
+    environment:
+      POSTGRES_USER: mortalidade
+      POSTGRES_PASSWORD: mortalidade
+      POSTGRES_DB: mortalidade
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  seed:
+    build: .
+    profiles:
+      - seed
+    depends_on:
+      - postgres
+    environment:
+      - POSTGRES_USER=mortalidade
+      - POSTGRES_PASSWORD=mortalidade
+      - POSTGRES_DB=mortalidade
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+    volumes:
+      - ./sim:/app/sim
+
+volumes:
+  pgdata:
