@@ -18,10 +18,17 @@ class DynamicInserter:
         self.table = table
         self.batch_size = batch_size
         self.logger = logger
-
         self._cols: set[str] = set()
 
         self._ensure_table()
+
+    def _update_cols(self) -> None:
+        self._cols = set(self._get_tables_cols())
+
+    def _get_tables_cols(self) -> list[str]:
+        query = f"PRAGMA table_info('{self.table}')"
+        result = self.conn.execute(query).fetchall()
+        return [row[1] for row in result]
 
     def _ensure_table(self) -> None:
         self.conn.execute("CREATE SEQUENCE IF NOT EXISTS id_seq START 1;")
@@ -30,10 +37,13 @@ class DynamicInserter:
                             id BIGINT PRIMARY KEY DEFAULT nextval('id_seq')
                         );
                         """)
-        self._cols.add("id")
+        self._update_cols()
         self.logger.info("Tabela %s criada.", self.table)
 
     def _add_col(self, new_col: str) -> None:
+
+        new_col = new_col.upper() # to do: pensar melhor nessa transformação
+
         if new_col in self._cols:
             self.logger.warning(
                 "Coluna %s já existe, nenhuma alteração foi realizada.",
@@ -41,11 +51,15 @@ class DynamicInserter:
             )
             return
 
-        self.conn.execute(
-            f"""ALTER TABLE {self.table} ADD COLUMN "{new_col}" TEXT""",
-        )
-        self._cols.add(new_col)
-        self.logger.info("Coluna %s adicionada.", new_col)
+        try:
+            self.conn.execute(
+                f"""ALTER TABLE {self.table} ADD COLUMN "{new_col}" TEXT""",
+            )
+            self._update_cols()
+            self.logger.info("Coluna %s adicionada.", new_col)
+        except Exception:
+            self.logger.exception("Erro ao inserir coluna %s", new_col)
+            raise
 
     def _insert_df(self, df: pd.DataFrame) -> None:
         cols = set(df.columns)

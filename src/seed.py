@@ -19,8 +19,8 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 conn = duckdb.connect("sim.duckdb")
-dynamic_inserter = DynamicInserter(conn, TABLE, 200_000, logger)
+dynamic_inserter = DynamicInserter(conn, TABLE, 50_000, logger)
 
-for ano in range(1979, 2025):
+for ano in range(2024, 2025):
     with ZipManager(ano, logger) as zm:
         dynamic_inserter.insert(zm)
