@@ -27,9 +27,54 @@ df_clean <- df %>%
 glimpse(df_clean)
 
 # 3. understand
-
 summary(df_clean)
 
+df_cat <- df_clean %>%
+  select(SEXO, RACACOR, CAUSA_BLOCO) %>%
+  mutate(
+    SEXO = case_when(
+      SEXO %in% c("M", "1") ~ "Masculino",
+      SEXO %in% c("F", "2") ~ "Feminino",
+      TRUE ~ NA_character_
+    ),
+    RACACOR = case_when(
+      RACACOR == "1" ~ "Branca",
+      RACACOR == "2" ~ "Preta",
+      RACACOR == "3" ~ "Amarela",
+      RACACOR == "4" ~ "Parda",
+      RACACOR == "5" ~ "Indígena",
+      TRUE ~ NA_character_
+    ),
+    CAUSA_BLOCO = as.character(CAUSA_BLOCO)  # mantém como caractere
+  ) %>%
+  drop_na()
+
+num_vars <- c("IDADE_DIAS", "PESO", "SEMAGESTAC", "RAZAOVIVMORT")
+cat_vars <- c("SEXO", "RACACOR", "CAUSA_BLOCO")
+
+for(v in num_vars){
+  ggplot(df_clean, aes_string(x = v)) +
+    geom_histogram(bins = 30, fill = "steelblue", color = "white") +
+    labs(title = paste("Histograma de", v), x = v, y = "Frequência") +
+    theme_minimal() -> p
+  print(p)
+}
+
+# ! VIÉS
+# a idade está codificada em unidades (minutos, horas, dias, meses, anos) com faixas desiguais.
+# Isso gera viés de medição, pois concentra observações em certos intervalos e cria lacunas artificiais.
+# O padrão observado no histograma pode não refletir a distribuição real da mortalidade.
+# Seria necessário converter todas as idades para uma unidade contínua única (ex.: dias) para análise consistente.
+
+
+for(v in cat_vars){
+  ggplot(df_cat, aes_string(x = v)) +
+    geom_bar(fill = "tomato") +
+    labs(title = paste("Distribuição de", v), x = NULL, y = "Contagem") +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1)) -> p
+  print(p)
+}
 # correlation analysis
 
 report_correlation <- function(df, var1, var2, sig_level = 0.05) {
