@@ -1,9 +1,0 @@
-[tool.taskipy.tasks]
-deps = "pip install -r requirements.txt"
-
-[tool.ruff]
-line-length = 88
-
-[tool.ruff.lint]
-select = ["ALL"]
-ignore = ["D", "TRY003"]
